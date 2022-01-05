@@ -1,9 +1,11 @@
 import socket
 from server import IP as server_ip
-#import machine
 
 
-class Machine():
+# import machine
+
+
+class Machine():  # абстрактный класс, обеспечивающий сообщение между контроллером и поворотным механизмом
     def __init__(self):
         self.x = 0
         self.y = 0
@@ -14,16 +16,17 @@ class Machine():
         self.y += (self.y - y)
         self.z += (self.z - z)
 
-client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # инициализация клиента
 IPs = server_ip
 PORT = 11111
 client.connect((IPs, PORT))
 rd = client.recv(1024)
 client.send("i'm OK too".encode('utf8'))
 flag = True
-raspb_con = Machine()
+rotator = Machine()
 
-while flag:
+while flag:  # реализация приема данных с сервера клиенту
     data_output = ''
     for i in range(3):
         data = client.recv(2048)
@@ -31,6 +34,5 @@ while flag:
         if not data:
             flag = False
     x, y, z = [float(j) for j in data_output.split()]
-    raspb_con.rotate(x, y, z)
-
-
+    if x or y or z:
+        rotator.rotate(x, y, z)
