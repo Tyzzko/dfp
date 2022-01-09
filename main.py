@@ -5,11 +5,10 @@ from requests import get
 from time import sleep  # импорт необходимых библиотек
 
 
-def return_tle():  # функция, возвращающая tle-файл
+def update_tle():  # функция, возвращающая tle-файл
     file = open('tle.txt', 'ab')
     file.write(get("http://www.celestrak.com/NORAD/elements/weather.txt").content)
     file.close()
-    return file
 
 
 class СalculationOfSpans:
@@ -27,7 +26,7 @@ class СalculationOfSpans:
 
     def get_next_passes(self):
         ''' Метод, возвращающий кортеж объектов datetime - времени пролетов спутника '''
-        return self.sat.get_next_passes(self.utc_time, self.lon, self.lat, self.alt, tool=0.001, horizon=0)[0]
+        return self.sat.get_next_passes(self.utc_time, self.length, self.lon, self.lat, self.alt, horizon=0)[0]
 
     def get_required_data(self):
         ''' Метод-получение данных для управления поворотным мехинизмом: азимута и высоты спутника.
@@ -51,15 +50,16 @@ class Server:
         self.server.listen(1)
         self.connection, self.address = self.server.accept()
         self.checkConnect = True
+        self.connection.send('OK'.encode('utf8'))
 
-    def data_dispatching(self, data1, data2):
+    def data_dispatching(self, data1):
         '''Метод, раелизующий передачу данных клиенту'''
         if self.checkConnect:
             if not data1:
                 self.server.close()
                 self.checkConnect = False
             else:
-                self.connection.send(f'{data1} {data2}'.encode('utf-8'))
+                self.connection.send(data1.encode('utf-8'))
 
     def close(self):
         '''Метод, закрывающий дескриптор файла сокета'''
@@ -83,14 +83,19 @@ if __name__ == '__main__':
     server = Server()  # инициализация сервера
     sat = СalculationOfSpans(name_of_sat)
 
-    tle_file = return_tle()
+    update_tle()
     passes = sat.get_next_passes()
+    server.data_dispatching('ыыыыыыы')
 
     if datetime.now() == passes[0]:
-        while datetime.now() != passes[-1]:
+        while datetime.now() != passes[1]:
             az, el = sat.get_required_data()
             server.data_dispatching(f'{az} {el}')
     else:
-        sleep(passes[0] - datetime.now())
+        print('спутника не ма((((')
+        s = passes[0] - datetime.now()
+        s = s.minute * 60 + s.second
+        sleep(s)
+        # sleep(passes[0] - datetime.now())
 
     server.close()
